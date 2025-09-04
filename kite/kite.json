@@ -1,0 +1,48 @@
+{
+  "api_key": "c2j9twmopwx1qvoa",
+  "api_secret": "hgjbrt0q3yvpxxw03heo4eunjvjiqbgz",
+  "redirect_uri": "https://127.0.0.1:3000",
+  "access_token": "FyFhYMS0HTfKAZXYH6BvrjdkmfrwCT3G",
+  "user_id": "EJU457",
+  "password": "Meera19jain73",
+  "totp_secret": "PI2BRUQTIAJEBGLTUZ35SCPLTR6HDNH6",
+  "session": {
+    "user_type": "individual/ind_with_nom",
+    "email": "meera.jain73@gmail.com",
+    "user_name": "Meera Siddhesh Jain",
+    "user_shortname": "Meera",
+    "broker": "ZERODHA",
+    "exchanges": [
+      "NSE",
+      "MF",
+      "BSE",
+      "NFO",
+      "BFO"
+    ],
+    "products": [
+      "CNC",
+      "NRML",
+      "MIS",
+      "BO",
+      "CO",
+      "MTF"
+    ],
+    "order_types": [
+      "MARKET",
+      "LIMIT",
+      "SL",
+      "SL-M"
+    ],
+    "avatar_url": null,
+    "user_id": "EJU457",
+    "api_key": "c2j9twmopwx1qvoa",
+    "access_token": "FyFhYMS0HTfKAZXYH6BvrjdkmfrwCT3G",
+    "public_token": "r7NZ2DxDt4nM4Rx3kuI50SVlblZ5jfHm",
+    "refresh_token": "",
+    "enctoken": "MHRbLlaP5uOAs8g6aeqM5RPigaXoawtyMtzXVo2ROQrPOARSm21RGcWgNMOhpyzuCZtqqA6n0LihNFfnamx7bB6gpRSmEdYPIxHnEBN10W1IwejiS0r4bhqXxtaeNIU=",
+    "login_time": "2025-09-04 06:17:29",
+    "meta": {
+      "demat_consent": "ddpi"
+    }
+  }
+}

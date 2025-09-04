@@ -89,5 +89,5 @@ class BaseModel(PaginatedAPIMixin, db.Model):
 
     id: so.Mapped[str] = so.mapped_column(sa.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     created_at: so.Mapped[datetime] = so.mapped_column(sa.DateTime(timezone=True),
-                                                       default=datetime.now(tz=timezone.utc), nullable=False)
+                                                       default=lambda: datetime.now(timezone.utc), nullable=False)
 

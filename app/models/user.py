@@ -1,13 +1,12 @@
-from typing import Optional
+from typing import Optional, List
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from app.models.base import BaseModel
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import url_for
 
 
 class User(BaseModel):
-    __tablename__ = 'users'
+    __tablename__ = 'user'
 
     is_admin: so.Mapped[bool] = so.mapped_column(sa.Boolean, default=False)
     name: so.Mapped[str] = so.mapped_column(sa.String(100), nullable=False)
@@ -17,6 +16,10 @@ class User(BaseModel):
 
     # OAuth fields
     google_id: so.Mapped[Optional[str]] = so.mapped_column(sa.String(100), unique=True, index=True, nullable=True)
+
+    # Relationships
+    trades: so.Mapped[List["Trade"]] = so.relationship(back_populates='user', cascade="all, delete-orphan")
+    tags: so.Mapped[List["Tag"]] = so.relationship(back_populates="user", cascade="all, delete-orphan")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -28,17 +31,3 @@ class User(BaseModel):
 
     def __repr__(self):
         return f"<User name={self.name}, email={self.email}>"
-
-    def to_dict(self):
-        data = {
-            'id': self.id,
-            'created_at': self.created_at,
-            'is_admin': self.is_admin,
-            'name': self.name,
-            'email': self.email,
-            'phone_number': self.phone_number,
-            '_links': {
-                'self': url_for('users.get_user', user_id=self.id)
-            }
-        }
-        return data
