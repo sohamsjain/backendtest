@@ -179,3 +179,32 @@ def delete_trade(trade_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'Failed to delete trade'}), 500
+
+
+# -----------------------
+# DELETE multiple trades
+# -----------------------
+@trades_bp.route('/delete-multiple', methods=['POST'])
+@jwt_required()
+def delete_multiple_trades():
+    current_user = get_current_user()
+    json_data = request.json
+
+    trade_ids = json_data.get('trade_ids')
+    if not trade_ids or not isinstance(trade_ids, list):
+        return jsonify({'error': 'trade_ids must be a non-empty list'}), 400
+
+    # Fetch trades that belong to the user
+    trades_to_delete = Trade.query.filter(Trade.id.in_(trade_ids), Trade.user_id == current_user.id).all()
+
+    if not trades_to_delete:
+        return jsonify({'error': 'No matching trades found'}), 404
+
+    try:
+        for trade in trades_to_delete:
+            db.session.delete(trade)
+        db.session.commit()
+        return jsonify({'message': f'{len(trades_to_delete)} trade(s) deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to delete trades'}), 500
