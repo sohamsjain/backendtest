@@ -39,8 +39,6 @@ def infer_side_type(entry, stoploss, side, last_price):
 @jwt_required()
 def get_trades():
     current_user = get_current_user()
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 100, type=int)
     status = request.args.get('status', '')
     symbol = request.args.get('symbol', '')
     trade_type = request.args.get('type', '')
@@ -54,15 +52,11 @@ def get_trades():
     if trade_type:
         query = query.filter(Trade.type == trade_type)
 
-    trades = query.order_by(Trade.updated_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
+    trades = query.order_by(Trade.updated_at.desc()).all()
 
     return jsonify({
-        'trades': trades_read_schema.dump(trades.items),
-        'total': trades.total,
-        'pages': trades.pages,
-        'current_page': page
+        'trades': trades_read_schema.dump(trades),
+        'total': len(trades),
     })
 
 

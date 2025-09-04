@@ -23,12 +23,11 @@ def search_tags():
         tags, total = Tag.search(query, page, per_page)
     else:
         # Fallback to SQLAlchemy search
-        sql_query = Tag.query
+        tags = []
+        total = 0
         if query:
-            sql_query = sql_query.filter(Tag.name.ilike(f'%{query}%'))
-        resources = sql_query.order_by(Tag.name).paginate(page=page, per_page=per_page, error_out=False)
-        tags = resources.items
-        total = resources.total
+            tags = Tag.query.filter(Tag.name.ilike(f'{query}%')).all()
+            total = len(tags)
 
     return jsonify({
         'tags': tags_schema.dump(tags),

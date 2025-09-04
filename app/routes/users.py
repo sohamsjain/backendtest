@@ -16,16 +16,13 @@ users_schema = UserSchema(many=True)
 @users_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_all_users():
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
 
-    users = User.query.paginate(page=page, per_page=per_page, error_out=False)
+    users = User.query.all()
+    total = len(users)
 
     return jsonify({
-        'users': users_schema.dump(users.items),
-        'total': users.total,
-        'pages': users.pages,
-        'current_page': page
+        'users': users_schema.dump(users),
+        'total': total,
     })
 
 
