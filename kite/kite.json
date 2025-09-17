@@ -2,7 +2,7 @@
   "api_key": "c2j9twmopwx1qvoa",
   "api_secret": "hgjbrt0q3yvpxxw03heo4eunjvjiqbgz",
   "redirect_uri": "https://127.0.0.1:3000",
-  "access_token": "FyFhYMS0HTfKAZXYH6BvrjdkmfrwCT3G",
+  "access_token": "Fs5ln2n2t4uhoD9OMHmcvY0u5dbRSTLk",
   "user_id": "EJU457",
   "password": "Meera19jain73",
   "totp_secret": "PI2BRUQTIAJEBGLTUZ35SCPLTR6HDNH6",
@@ -36,11 +36,11 @@
     "avatar_url": null,
     "user_id": "EJU457",
     "api_key": "c2j9twmopwx1qvoa",
-    "access_token": "FyFhYMS0HTfKAZXYH6BvrjdkmfrwCT3G",
-    "public_token": "r7NZ2DxDt4nM4Rx3kuI50SVlblZ5jfHm",
+    "access_token": "Fs5ln2n2t4uhoD9OMHmcvY0u5dbRSTLk",
+    "public_token": "Lp9HcuaY9ABvYIhDVDGlmIzXa24QGwBW",
     "refresh_token": "",
-    "enctoken": "MHRbLlaP5uOAs8g6aeqM5RPigaXoawtyMtzXVo2ROQrPOARSm21RGcWgNMOhpyzuCZtqqA6n0LihNFfnamx7bB6gpRSmEdYPIxHnEBN10W1IwejiS0r4bhqXxtaeNIU=",
-    "login_time": "2025-09-04 06:17:29",
+    "enctoken": "njIuv7kNvhfkTwgH6TVVEBL5+LKBKPKlGdQhN2fvBug6B7g5vaVgzx7Vi++4rpJwy5DMXNVhv2E0tlTqy5EAVH0Rn03hmSkjQ76owheJmEk26HMvV8whZTdHGoJHg8A=",
+    "login_time": "2025-09-10 09:10:04",
     "meta": {
       "demat_consent": "ddpi"
     }

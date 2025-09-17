@@ -15,23 +15,6 @@ trade_create_schema = TradeCreateSchema()
 trade_update_schema = TradeUpdateSchema()
 
 
-def infer_side_type(entry, stoploss, side, last_price):
-    if stoploss is not None:
-        side = TradeSide.BUY if entry >= stoploss else TradeSide.SELL
-        if side == TradeSide.BUY:
-            trade_type = TradeType.BREAKOUT if entry <= last_price else TradeType.PULLBACK
-        else:  # Sell
-            trade_type = TradeType.BREAKOUT if entry >= last_price else TradeType.PULLBACK
-    else:
-        if not side:
-            raise ValidationError("Either 'Stoploss' or 'Side' must be provided.")
-        if side == TradeSide.BUY:
-            trade_type = TradeType.BREAKOUT if entry <= last_price else TradeType.PULLBACK
-        else:
-            trade_type = TradeType.BREAKOUT if entry >= last_price else TradeType.PULLBACK
-    return side, trade_type
-
-
 # -----------------------
 # GET all trades
 # -----------------------
@@ -39,20 +22,7 @@ def infer_side_type(entry, stoploss, side, last_price):
 @jwt_required()
 def get_trades():
     current_user = get_current_user()
-    status = request.args.get('status', '')
-    symbol = request.args.get('symbol', '')
-    trade_type = request.args.get('type', '')
-
-    query = Trade.query.filter_by(user_id=current_user.id)
-
-    if status:
-        query = query.filter(Trade.status == status)
-    if symbol:
-        query = query.filter(Trade.symbol.ilike(f'%{symbol}%'))
-    if trade_type:
-        query = query.filter(Trade.type == trade_type)
-
-    trades = query.order_by(Trade.updated_at.desc()).all()
+    trades = Trade.query.filter_by(user_id=current_user.id).order_by(Trade.updated_at.desc()).all()
 
     return jsonify({
         'trades': trades_read_schema.dump(trades),
@@ -87,14 +57,9 @@ def create_trade():
 
     # Fetch ticker for last_price
     ticker = Ticker.query.get_or_404(data['ticker_id'])
+    data['symbol'] = ticker.symbol
     entry = data['entry']
-    stoploss = data.get('stoploss')
-    side = data.get('side')
-
-    # Infer side and type
-    side, trade_type = infer_side_type(entry, stoploss, side, ticker.last_price)
-    data['side'] = side
-    data['type'] = trade_type
+    data['type'] = TradeType.CROSSING_ABOVE if entry >= ticker.last_price else TradeType.CROSSING_BELOW
     data['user_id'] = current_user.id
 
     # Handle tags
@@ -140,7 +105,7 @@ def update_trade(trade_id):
         if hasattr(trade, field) and field not in ('user_id', 'tags'):
             setattr(trade, field, value)
 
-    trade.edited_at = datetime.utcnow()
+    trade.edited_at = datetime.now(timezone.utc)
 
     # Handle tags separately
     if 'tags' in json_data:
@@ -184,7 +149,7 @@ def delete_trade(trade_id):
 # -----------------------
 # DELETE multiple trades
 # -----------------------
-@trades_bp.route('/delete-multiple', methods=['POST'])
+@trades_bp.route('/delete-multiple', methods=['DELETE'])
 @jwt_required()
 def delete_multiple_trades():
     current_user = get_current_user()

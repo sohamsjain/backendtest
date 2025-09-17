@@ -2,25 +2,25 @@ import sqlalchemy as sa
 
 
 class TradeSide:
-    BUY = 'Buy'
-    SELL = 'Sell'
+    BUY = 'BUY'
+    SELL = 'SELL'
 
 
 trade_side_enum = sa.Enum(TradeSide.BUY, TradeSide.SELL, name='trade_side')
 
 
 class TradeType:
-    BREAKOUT = 'Breakout'
-    PULLBACK = 'Pullback'
+    CROSSING_ABOVE = 'Crossing Above'
+    CROSSING_BELOW = 'Crossing Below'
 
 
-trade_type_enum = sa.Enum(TradeType.BREAKOUT, TradeType.PULLBACK, name='trade_type')
+trade_type_enum = sa.Enum(TradeType.CROSSING_ABOVE, TradeType.CROSSING_BELOW, name='trade_type')
 
 
 class TradeStatus:
     ACTIVE = 'Active'
     ENTRY = 'Entry'
-    STOPLOSS = 'Stoploss'
+    STOPLOSS = 'Stop Loss'
     TARGET = 'Target'
 
 

@@ -5,7 +5,7 @@ import sqlalchemy.orm as so
 from app import db
 from app.models.base import BaseModel
 from app.models.utils import TradeStatus, TradeTimeframe, trade_side_enum, \
-    trade_type_enum, trade_status_enum, trade_timeframe_enum, trade_eta_enum
+    trade_type_enum, trade_status_enum, trade_timeframe_enum, trade_eta_enum, TradeSide
 from datetime import datetime, timezone
 
 # Many-to-many relationship with tags
@@ -79,17 +79,20 @@ class Trade(BaseModel):
     def risk_reward_ratio(self):
         if not self.stoploss or not self.target:
             return None
-        return round(self.reward_per_unit / self.risk_per_unit, 2)
+        try:
+            return round(self.reward_per_unit / self.risk_per_unit, 1)
+        except ZeroDivisionError:
+            return None
 
     @property
     def risk_per_unit(self):
         if not self.stoploss:
             return None
-        return abs(self.entry - self.stoploss)
+        return self.entry - self.stoploss if self.side == TradeSide.BUY else self.stoploss - self.entry
 
     @property
     def reward_per_unit(self):
         if not self.target:
             return None
-        return abs(self.target - self.entry)
+        return self.target - self.entry if self.side == TradeSide.BUY else self.entry - self.target
 

@@ -21,6 +21,7 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     jwt.init_app(app)
     CORS(app)
+    app.url_map.strict_slashes = False
 
     # Register blueprints
     from app.routes.auth import auth_bp

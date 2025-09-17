@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required
+import sqlalchemy as sa
 from app.models import Ticker
 from app.utils.schemas import TickerSchema
 
@@ -26,7 +27,7 @@ def search_tickers():
         tickers = []
         total = 0
         if query:
-            tickers = Ticker.query.filter(Ticker.symbol.ilike(f'{query}%')).all()
+            tickers = Ticker.query.filter(sa.or_(Ticker.symbol.ilike(f'{query}%'), Ticker.name.ilike(f'%{query}%'))).all()
             total = len(tickers)
 
     return jsonify({
