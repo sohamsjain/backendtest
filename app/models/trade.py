@@ -108,7 +108,6 @@ class Trade(BaseModel):
             cls.status.in_([TradeStatus.ACTIVE, TradeStatus.ENTRY])
         ).all()
 
-    @classmethod
     def check(self, candle):
         """Check if a trade status should change based on candle data"""
 
@@ -267,6 +266,8 @@ class Trade(BaseModel):
             self.entry_eta = None
             self.stoploss_eta = None
             self.target_eta = None
+
+        db.session.commit()
 
     def _calculate_eta(self, price_to_check):
         """Calculate ETA based on price difference"""

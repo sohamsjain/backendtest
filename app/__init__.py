@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from elasticsearch import Elasticsearch
 from config import Config
+from sqlalchemy import event
 
 
 db = SQLAlchemy()
@@ -22,6 +23,15 @@ def create_app(config_class=Config):
     jwt.init_app(app)
     CORS(app)
     app.url_map.strict_slashes = False
+
+    if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
+
+        with app.app_context():
+            @event.listens_for(db.engine, "connect")
+            def enable_wal(dbapi_connection, connection_record):
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA journal_mode=WAL;")
+                cursor.close()
 
     # Register blueprints
     from app.routes.auth import auth_bp

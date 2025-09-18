@@ -152,17 +152,25 @@ class TickerManager:
         return market_start <= tick_time_ist <= market_end
 
     def get_candle_timestamp(self, timestamp):
+        # Always work in UTC for candle timestamps
         if timestamp.tzinfo is None:
-            timestamp_ist = IST.localize(timestamp)
+            timestamp_utc = timestamp.replace(tzinfo=timezone.utc)
         else:
-            timestamp_ist = timestamp.astimezone(IST)
-        seconds = timestamp_ist.second
+            timestamp_utc = timestamp.astimezone(timezone.utc)
+        seconds = timestamp_utc.second
         floored_seconds = (seconds // 5) * 5
-        return timestamp_ist.replace(second=floored_seconds, microsecond=0)
+        return timestamp_utc.replace(second=floored_seconds, microsecond=0)
 
     def process_tick(self, instrument_token, price, volume=0, timestamp=None):
         if timestamp is None:
             timestamp = datetime.now(timezone.utc)
+        elif timestamp.tzinfo is None:
+            # If timestamp has no timezone info, assume it's UTC
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+        else:
+            # Convert to UTC for consistency
+            timestamp = timestamp.astimezone(timezone.utc)
+
         candle_timestamp = self.get_candle_timestamp(timestamp)
 
         with self.data_lock:
@@ -176,7 +184,7 @@ class TickerManager:
             self.current_candles[instrument_token].update_tick(price, volume)
 
     def process_completed_candles(self):
-        current_time = datetime.now(IST)
+        current_time = datetime.now(timezone.utc)
         completed_instruments = []
         with self.data_lock:
             for instrument_token, candle in self.current_candles.items():
@@ -187,7 +195,7 @@ class TickerManager:
             try:
                 ticker = self.tickers[instrument_token]
                 self.update_ticker_price(ticker, candle.close, current_time)
-                self.check_trades(ticker.id, candle.close, candle)
+                self.check_trades(ticker.id, candle)
                 with self.data_lock:
                     if instrument_token in self.current_candles:
                         self.candle_history[instrument_token].append(candle)
