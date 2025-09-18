@@ -74,6 +74,7 @@ def create_trade():
 
     trade = Trade(**data)
     trade.tags = trade_tags
+    trade.update_etas()
 
     try:
         db.session.add(trade)
@@ -120,6 +121,8 @@ def update_trade(trade_id):
             new_tags.append(tag)
         # Assign new tags to trade (remove missing tags from trade, don't delete tags)
         trade.tags = new_tags
+
+    trade.update_etas()
 
     try:
         db.session.commit()
