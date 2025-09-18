@@ -74,11 +74,11 @@ def create_trade():
 
     trade = Trade(**data)
     trade.tags = trade_tags
-    trade.update_etas()
 
     try:
         db.session.add(trade)
         db.session.commit()
+        trade.update_etas()
         return jsonify({'message': 'Trade created successfully', 'trade': trade_read_schema.dump(trade)}), 201
     except Exception as e:
         db.session.rollback()
