@@ -5,7 +5,7 @@ import sqlalchemy.orm as so
 from app import db
 from app.models.base import BaseModel
 from app.models.utils import TradeStatus, TradeTimeframe, trade_side_enum, \
-    trade_type_enum, trade_status_enum, trade_timeframe_enum, trade_eta_enum, TradeSide
+    trade_type_enum, trade_status_enum, trade_timeframe_enum, trade_eta_enum, TradeSide, TradeETA, TradeType
 from datetime import datetime, timezone
 
 # Many-to-many relationship with tags
@@ -95,4 +95,215 @@ class Trade(BaseModel):
         if not self.target:
             return None
         return self.target - self.entry if self.side == TradeSide.BUY else self.entry - self.target
+
+    # Add these methods to your existing Trade model in app/models/trade.py
+
+    @classmethod
+    def get_active_trades_for_ticker(cls, ticker_id):
+        """Get all active trades for a specific ticker"""
+        from app.models.utils import TradeStatus
+
+        return cls.query.filter(
+            cls.ticker_id == ticker_id,
+            cls.status.in_([TradeStatus.ACTIVE, TradeStatus.ENTRY])
+        ).all()
+
+    @classmethod
+    def check(self, candle):
+        """Check if a trade status should change based on candle data"""
+
+        now = datetime.now(timezone.utc)
+        status_changed = False
+        candle_high = candle.high
+        candle_low = candle.low
+
+        if self.status == TradeStatus.ACTIVE:
+            # For ACTIVE trades
+
+            if self.type == TradeType.CROSSING_ABOVE:
+                # For CROSSING_ABOVE trades
+
+                if self.side == TradeSide.BUY:
+                    # For BUY trades where entry is above last price
+
+                    if self.target and candle_high >= self.target:
+                        # Check for Missed Case
+
+                        self.status = TradeStatus.TARGET
+                        self.target_at = now
+                        status_changed = True
+
+                    elif candle_high >= self.entry:
+                        # Check for Entry
+
+                        self.status = TradeStatus.ENTRY
+                        self.entry_at = now
+                        status_changed = True
+
+                elif self.side == TradeSide.SELL:
+                    # For SELL trades where entry is above last price
+
+                    if self.stoploss and candle_high > self.stoploss:
+                        # Check for Failed Case
+
+                        self.status = TradeStatus.STOPLOSS
+                        self.stoploss_at = now
+                        status_changed = True
+
+                    elif candle_high >= self.entry:
+                        # Check for Entry
+
+                        self.status = TradeStatus.ENTRY
+                        self.entry_at = now
+                        status_changed = True
+
+            elif self.type == TradeType.CROSSING_BELOW:
+                # For CROSSING_BELOW trades
+
+                if self.side == TradeSide.BUY:
+                    # For BUY trades where entry is below last price
+
+                    if self.stoploss and candle_low < self.stoploss:
+                        # Check for Failed Case
+
+                        self.status = TradeStatus.STOPLOSS
+                        self.stoploss_at = now
+                        status_changed = True
+
+                    elif candle_low <= self.entry:
+                        # Check for Entry
+
+                        self.status = TradeStatus.ENTRY
+                        self.entry_at = now
+                        status_changed = True
+
+                elif self.side == TradeSide.SELL:
+                    # For SELL trades where entry is below last price
+
+                    if self.target and candle_low <= self.target:
+                        # Check for Missed Case
+
+                        self.status = TradeStatus.TARGET
+                        self.target_at = now
+                        status_changed = True
+
+                    elif candle_low <= self.entry:
+                        # Check for Entry
+
+                        self.status = TradeStatus.ENTRY
+                        self.entry_at = now
+                        status_changed = True
+
+        elif self.status == TradeStatus.ENTRY:
+            # For ENTRY trades
+
+            if self.side == TradeSide.BUY:
+                # For BUY trades
+
+                # For BUY trades that have hit entry
+                if self.stoploss and candle_low < self.stoploss:
+                    # Check for Stoploss
+
+                    self.status = TradeStatus.STOPLOSS
+                    self.stoploss_at = now
+                    status_changed = True
+
+                elif self.target and candle_high >= self.target:
+                    # Check for Target
+
+                    self.status = TradeStatus.TARGET
+                    self.target_at = now
+                    status_changed = True
+
+            elif self.side == TradeSide.SELL:
+                # For SELL trades
+
+                if self.stoploss and candle_high > self.stoploss:
+                    # Check for Stoploss
+
+                    self.status = TradeStatus.STOPLOSS
+                    self.stoploss_at = now
+                    status_changed = True
+
+                elif self.target and candle_low <= self.target:
+                    # Check for Target
+
+                    self.status = TradeStatus.TARGET
+                    self.target_at = now
+                    status_changed = True
+
+        if status_changed:
+            self.status_updated_at = now
+            self.updated_at = now
+            db.session.commit()
+
+        return status_changed
+
+    def update_etas(self):
+        """Update ETA fields based on current price and trade parameters"""
+
+        current_price = self.last_price
+
+        if not current_price:
+            return
+
+        # Update entry ETA
+        if self.status == TradeStatus.ACTIVE:
+            self.entry_eta = self._calculate_eta(self.entry)
+            self.stoploss_eta = None
+            self.target_eta = None
+
+        # Update stoploss ETA
+        elif self.status == TradeStatus.ENTRY:
+            self.entry_eta = None
+
+            if self.stoploss:
+                self.stoploss_eta = self._calculate_eta(self.stoploss)
+
+            if self.target:
+                self.target_eta = self._calculate_eta(self.target)
+
+        else:
+            self.entry_eta = None
+            self.stoploss_eta = None
+            self.target_eta = None
+
+    def _calculate_eta(self, price_to_check):
+        """Calculate ETA based on price difference"""
+
+        if not price_to_check:
+            return TradeETA.FAR
+
+        # Calculate percentage difference
+        price_diff_percent = abs((price_to_check - self.last_price) / self.last_price) * 100
+
+        # Define ETA based on percentage difference
+        if price_diff_percent <= 0.1:  # 0.1%
+            return TradeETA.ONE_MINUTE
+        elif price_diff_percent <= 0.2:  # 0.2%
+            return TradeETA.FIVE_MINUTES
+        elif price_diff_percent <= 0.5:  # 0.5%
+            return TradeETA.FIFTEEN_MINUTES
+        elif price_diff_percent <= 1.0:  # 1%
+            return TradeETA.ONE_HOUR
+        elif price_diff_percent <= 2.0:  # 2%
+            return TradeETA.ONE_DAY
+        elif price_diff_percent <= 5.0:  # 5%
+            return TradeETA.ONE_WEEK
+        elif price_diff_percent <= 10.0:  # 10%
+            return TradeETA.ONE_MONTH
+        else:
+            return TradeETA.FAR
+
+    @classmethod
+    def update_all_etas(cls):
+        """Update ETAs for all active trades - can be called periodically"""
+        active_trades = cls.query.filter(
+            cls.status.in_([TradeStatus.ACTIVE, TradeStatus.ENTRY])
+        ).all()
+
+        for trade in active_trades:
+            trade.update_etas()
+
+        db.session.commit()
 
